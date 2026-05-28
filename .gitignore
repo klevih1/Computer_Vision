@@ -1,0 +1,7 @@
+*.pt
+*.csv
+crops/
+models/
+dataset/
+dataset_split/
+runs/
