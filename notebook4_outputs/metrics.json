@@ -1,0 +1,7 @@
+{
+  "f1_macro": 0.873,
+  "roc_auc": 1.0,
+  "n_train": 70,
+  "n_val": 14,
+  "n_test": 16
+}
