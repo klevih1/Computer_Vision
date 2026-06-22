@@ -1,34 +1,34 @@
 {
   "sharp_visible": {
-    "precision": 0.337,
-    "recall": 0.8857,
-    "f1": 0.4882,
-    "mean_conf": 0.2817,
-    "n_images": 75,
-    "n_gt_boxes": 105
+    "precision": 0.2656,
+    "recall": 0.9101,
+    "f1": 0.4112,
+    "mean_conf": 0.2952,
+    "n_images": 66,
+    "n_gt_boxes": 89
   },
   "sharp_occluded": {
-    "precision": 0.6895,
-    "recall": 0.671,
-    "f1": 0.6801,
-    "mean_conf": 0.2607,
-    "n_images": 186,
-    "n_gt_boxes": 854
+    "precision": 0.8545,
+    "recall": 0.7928,
+    "f1": 0.8225,
+    "mean_conf": 0.3946,
+    "n_images": 168,
+    "n_gt_boxes": 830
   },
   "blurry_visible": {
-    "precision": 0.4796,
-    "recall": 0.8469,
-    "f1": 0.6124,
-    "mean_conf": 0.3013,
-    "n_images": 965,
-    "n_gt_boxes": 2600
+    "precision": 0.5733,
+    "recall": 0.7534,
+    "f1": 0.6511,
+    "mean_conf": 0.2925,
+    "n_images": 973,
+    "n_gt_boxes": 2616
   },
   "blurry_occluded": {
-    "precision": 0.4163,
-    "recall": 0.698,
-    "f1": 0.5215,
-    "mean_conf": 0.2642,
-    "n_images": 1897,
-    "n_gt_boxes": 3662
+    "precision": 0.4946,
+    "recall": 0.599,
+    "f1": 0.5418,
+    "mean_conf": 0.2983,
+    "n_images": 1907,
+    "n_gt_boxes": 3686
   }
 }
