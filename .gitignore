@@ -1,7 +1,8 @@
-*.pt
+# Large data - not stored in the repo (see README for the dataset source)
 *.csv
 crops/
-models/
 dataset/
 dataset_split/
 runs/
+
+# Model weights (models/*.pt) ARE tracked - required for the submission.

@@ -13,14 +13,14 @@ Three models working together:
 2. **Sharpness classifier** marks each one as sharp or blurry.
 3. **Occlusion classifier** marks each one as visible or occluded.
 
-Plus a **pipeline** that ties them together: an image goes in, and every detected animal
+Plus a pipeline that ties them together: an image goes in, and every detected animal
 comes out with a species label and a reliability tag (reliable / caution / unreliable).
 
 ## Dataset
 
 The ALFS subset of the BAMBI project: thermal aerial drone images in YOLO format. The
 animals are tiny in the frame, often motion-blurred, and frequently half-hidden behind
-terrain. The frames come from video, so we split the data **by whole flight** (not by
+terrain. The frames come from video, so we split the data by whole flight (not by
 single frame) to keep near-identical frames from landing in both train and test.
 
 After cleaning:
@@ -35,9 +35,9 @@ re-running, every detection metric went up:
 
 | Problem in the first run | Fix |
 |--------------------------|-----|
-| The model trained at high resolution (1280) but was **evaluated at 640** - the tiny animals basically vanish at the smaller size, so the score looked worse than the model really was | Evaluate at the same 1280 it was trained on |
-| The animal crops were saved as **JPEG**, which blurs them - a problem when the whole point is measuring blur | Save crops as lossless PNG |
-| **"no-animal" was being used as a detection class** - you can't draw a box around nothing, and it dragged the average down | Drop it, keep the 7 real species |
+| The model trained at high resolution (1280) but was evaluated at 640 - the tiny animals basically vanish at the smaller size, so the score looked worse than the model really was | Evaluate at the same 1280 it was trained on |
+| The animal crops were saved as JPEG, which blurs them - a problem when the whole point is measuring blur | Save crops as lossless PNG |
+| "no-animal" was being used as a detection class - you can't draw a box around nothing, and it dragged the average down | Drop it, keep the 7 real species |
 
 Detection results on the test set, first run vs after the fixes:
 
@@ -48,8 +48,8 @@ Detection results on the test set, first run vs after the fixes:
 | Precision | 0.308 | **0.512** |
 | Recall | 0.204 | **0.221** |
 
-The same crop fix (PNG instead of JPEG) also helped the **sharpness classifier**, whose
-F1 went from 0.91 to **0.96**.
+The same crop fix (PNG instead of JPEG) also helped the sharpness classifier, whose
+F1 went from 0.91 to 0.96.
 
 ## How it works
 
@@ -87,14 +87,16 @@ return each detection tagged reliable / caution / unreliable.
 
 red-deer (by far the most common class) is detected best; the rarest species are hardest.
 
-**Sharpness classifier:** F1 (macro) **0.957**, ROC-AUC 0.993
+**Sharpness classifier:** F1 (macro) 0.957, ROC-AUC 0.993
 **Occlusion classifier:** F1 (macro) 0.616, ROC-AUC 0.670
 
 **Manual sharpness check (Notebook 4):** a classifier trained on 100 hand-picked images
-(50 clear, 50 blurry) reached F1 0.873, confirming that sharpness can be learned from
-human labels, not just from the Laplacian rule.
+(50 clear, 50 blurry) reached F1 0.83 on the held-out images. Worth noting: the
+auto-labelled sharpness classifier scores higher (0.96 vs 0.83) - but that's partly
+because it's effectively learning to reproduce the Laplacian rule it was labelled with,
+while this manual version is the stricter, human-grounded check.
 
-A visual walkthrough of all the charts and tables is in **[SHOWCASE.md](SHOWCASE.md)**.
+A visual walkthrough of all the charts and tables is in [SHOWCASE.md](SHOWCASE.md).
 
 ## Notebooks
 
@@ -107,8 +109,11 @@ A visual walkthrough of all the charts and tables is in **[SHOWCASE.md](SHOWCASE
 | `reports/` | Charts and metric JSONs |
 | `notebook4_outputs/` | Notebook 4's charts and metrics |
 
-The dataset, crops, model weights and CSVs are gitignored (too big); the repo holds the
-code, the generated charts, and the docs.
+The trained model weights are included in `models/` (YOLO detector + the two
+classifiers + the manual-sharpness model). The raw dataset, crops and CSVs are not in
+the repo (too big) - the dataset is the BAMBI ALFS thermal subset; place it in a
+`dataset/` folder next to the notebooks and run Notebooks 1 and 2 to regenerate the
+crops and split.
 
 ## Running it
 
@@ -121,6 +126,17 @@ pip install ultralytics opencv-python pandas numpy matplotlib seaborn pyyaml sci
 Run Notebooks 1 -> 2 -> 3 in order (Notebook 3's training wants a GPU). Notebook 4 is
 standalone and uses its own set of images.
 
+## A note on how it was run
+
+The heavy training (the YOLO detector and the two classifiers) was done on a cloud GPU (Azure) as detached background scripts, since the laptop we worked on has no GPU and
+training is slow. The notebooks then load the saved weights (in `models/`) to evaluate
+the models and run the pipeline - so you can reproduce all the results without retraining.
+
+Because training ran as scripts rather than inside the notebooks, a couple of in-notebook
+outputs aren't present: the classifier training cells show no live output (we added a
+note in those cells), and the per-epoch training curves for the two classifiers aren't plotted (the scripts didn't log them). The confusion matrices, final metrics, and the
+YOLO training curves are all there - those are what the results rest on.
+
 ## Limits and what's next
 
 - **Class imbalance**: red-deer dominates, so the rare species are detected and classified
@@ -129,9 +145,5 @@ standalone and uses its own set of images.
   the small-animal detection further.
 - **Sharpness labels** are auto-generated, so that classifier is partly learning to copy a
   formula - Notebook 4's hand-labelled version is the stricter check.
-- **Occlusion labels** come from the dataset's own codes, so they're only as good as the
-  original annotators.
+- **Occlusion labels** come from the dataset's own codes
 
-## Team
-
-Hysenlli Klevi, Kerimova Dilyara, Iancovschi Vlad, Teubner Elias.
