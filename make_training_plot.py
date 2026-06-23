@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv(r"C:\Users\dilya\Downloads\results.csv")
+df = pd.read_csv("reports/yolo_results.csv")
 df.columns = [c.strip() for c in df.columns]
 
 epoch = df["epoch"]
@@ -33,6 +33,6 @@ for ax, col, title, color in panels:
                     fontsize=9, color="green")
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])
-out = r"C:\Users\dilya\Desktop\Computer_Vision\reports\yolo_training_curves_clean.png"
+out = "reports/yolo_training_curves.png"
 plt.savefig(out, dpi=150, bbox_inches="tight")
 print("saved:", out)
