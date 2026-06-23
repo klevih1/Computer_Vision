@@ -1,9 +1,9 @@
 # Reliability-Aware Wildlife Detection in Aerial Drone Imagery
 
-We detect animals in thermal drone footage and, for each detection, also say how much
-you can trust it: is the animal blurry, and is it partly hidden? A normal detector just
+We detect animals in thermal drone footage and, for each detection, also rate how much
+it can be trusted: is the animal blurry, and is it partly hidden? A normal detector just
 draws a box. The point here is to tell a researcher which boxes are solid and which ones
-to double-check.
+need a second look.
 
 ## What it does
 
@@ -35,9 +35,9 @@ re-running, every detection metric went up:
 
 | Problem in the first run | Fix |
 |--------------------------|-----|
-| The model trained at high resolution (1280) but was evaluated at 640 - the tiny animals basically vanish at the smaller size, so the score looked worse than the model really was | Evaluate at the same 1280 it was trained on |
-| The animal crops were saved as JPEG, which blurs them - a problem when the whole point is measuring blur | Save crops as lossless PNG |
-| "no-animal" was being used as a detection class - you can't draw a box around nothing, and it dragged the average down | Drop it, keep the 7 real species |
+| The model trained at high resolution (1280) but was evaluated at 640, where the tiny animals basically vanish, so the score looked worse than the model really was | Evaluate at the same 1280 it was trained on |
+| The animal crops were saved as JPEG, which blurs them, a problem when the whole point is measuring blur | Save crops as lossless PNG |
+| "no-animal" was being used as a detection class, but there is nothing to put a box around, and it dragged the average down | Drop it, keep the 7 real species |
 
 Detection results on the test set, first run vs after the fixes:
 
@@ -47,6 +47,10 @@ Detection results on the test set, first run vs after the fixes:
 | mAP@0.5:0.95 | 0.063 | **0.080** |
 | Precision | 0.308 | **0.512** |
 | Recall | 0.204 | **0.221** |
+
+We also tested the resolution choice directly by training a version at 640. It scored
+lower than the original run, which confirmed the animals are too small to survive the
+lower resolution, so we kept everything at 1280.
 
 The same crop fix (PNG instead of JPEG) also helped the sharpness classifier, whose
 F1 went from 0.91 to 0.96.
@@ -61,11 +65,13 @@ split by flight (~70/15/15), and cut out a small padded crop of every animal.
   the dark background masked out. A threshold splits crops into sharp vs blurry; we
   picked it by eye from a calibration grid.
 - *Occlusion* is read straight from the BAMBI class code, whose last digit already records
-  whether the original annotators saw the animal as visible or occluded - so no manual
-  labelling needed.
+  whether the original annotators saw the animal as visible or occluded, so no manual
+  labelling is needed.
 
 **Models (Notebook 3).** YOLOv11s (pretrained on COCO) for detection, and two
-EfficientNet-B0 networks for the sharpness and occlusion classifiers. Both classifiers
+EfficientNet-B0 networks for the sharpness and occlusion classifiers. The detector was
+fine-tuned at 1280 with early stopping: the best model came at epoch 30, and training
+stopped at epoch 40 once ten more epochs brought no improvement. Both classifiers
 use class weights because the data is heavily imbalanced.
 
 **Pipeline.** One function: image -> detect -> crop each animal -> run both classifiers ->
@@ -92,8 +98,8 @@ red-deer (by far the most common class) is detected best; the rarest species are
 
 **Manual sharpness check (Notebook 4):** a classifier trained on 100 hand-picked images
 (50 clear, 50 blurry) reached F1 0.83 on the held-out images. Worth noting: the
-auto-labelled sharpness classifier scores higher (0.96 vs 0.83) - but that's partly
-because it's effectively learning to reproduce the Laplacian rule it was labelled with,
+auto-labelled sharpness classifier scores higher (0.96 vs 0.83), but that is partly
+because it is effectively learning to reproduce the Laplacian rule it was labelled with,
 while this manual version is the stricter, human-grounded check.
 
 A visual walkthrough of all the charts and tables is in [SHOWCASE.md](SHOWCASE.md).
@@ -111,7 +117,7 @@ A visual walkthrough of all the charts and tables is in [SHOWCASE.md](SHOWCASE.m
 
 The trained model weights are included in `models/` (YOLO detector + the two
 classifiers + the manual-sharpness model). The raw dataset, crops and CSVs are not in
-the repo (too big) - the dataset is the BAMBI ALFS thermal subset; place it in a
+the repo (too big). The dataset is the BAMBI ALFS thermal subset; place it in a
 `dataset/` folder next to the notebooks and run Notebooks 1 and 2 to regenerate the
 crops and split.
 
@@ -130,12 +136,12 @@ standalone and uses its own set of images.
 
 The heavy training (the YOLO detector and the two classifiers) was done on a cloud GPU (Azure) as detached background scripts, since the laptop we worked on has no GPU and
 training is slow. The notebooks then load the saved weights (in `models/`) to evaluate
-the models and run the pipeline - so you can reproduce all the results without retraining.
+the models and run the pipeline, so all the results can be reproduced without retraining.
 
 Because training ran as scripts rather than inside the notebooks, a couple of in-notebook
 outputs aren't present: the classifier training cells show no live output (we added a
 note in those cells), and the per-epoch training curves for the two classifiers aren't plotted (the scripts didn't log them). The confusion matrices, final metrics, and the
-YOLO training curves are all there - those are what the results rest on.
+YOLO training curves are all there, and those are what the results rest on.
 
 ## Limits and what's next
 
@@ -144,6 +150,8 @@ YOLO training curves are all there - those are what the results rest on.
 - **Compute**: high-res detection training is slow; an even higher resolution might push
   the small-animal detection further.
 - **Sharpness labels** are auto-generated, so that classifier is partly learning to copy a
-  formula - Notebook 4's hand-labelled version is the stricter check.
-- **Occlusion labels** come from the dataset's own codes
+  formula. Notebook 4's hand-labelled version is the stricter check.
+- **Occlusion labels** come from the dataset's own codes. Occlusion is a spectrum rather
+  than a clean yes or no, so some subjectivity is unavoidable; combining several judgments
+  would firm up the borderline cases.
 
